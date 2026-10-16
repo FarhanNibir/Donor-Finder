@@ -1,0 +1,175 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Create Account | BloodLink</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+          rel="stylesheet">
+
+    <style>
+        body {
+            min-height: 100vh;
+            background: #fff7f7;
+            display: flex;
+            align-items: center;
+            padding: 35px 0;
+            color: #18212f;
+        }
+
+        .auth-card {
+            max-width: 560px;
+            margin: auto;
+            padding: 38px;
+            background: white;
+            border: 1px solid #f1e5e5;
+            border-radius: 22px;
+            box-shadow: 0 18px 55px rgba(100, 30, 30, .07);
+        }
+
+        .brand {
+            color: #18212f;
+            text-decoration: none;
+            font-size: 1.6rem;
+            font-weight: 800;
+        }
+
+        .brand span { color: #e63946; }
+
+        .brand-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            margin-right: 7px;
+            border-radius: 12px;
+            background: #e63946;
+            color: white;
+        }
+
+        .subtitle { color: #6b7280; }
+
+        .form-label { font-weight: 600; font-size: .92rem; }
+
+        .form-control {
+            padding: 12px 14px;
+            border-radius: 10px;
+            border-color: #e8e5e5;
+        }
+
+        .form-control:focus {
+            border-color: #e63946;
+            box-shadow: 0 0 0 .2rem rgba(230, 57, 70, .12);
+        }
+
+        .btn-red {
+            width: 100%;
+            padding: 13px;
+            border-radius: 10px;
+            background: #e63946;
+            border: 0;
+            color: white;
+            font-weight: 700;
+        }
+
+        .btn-red:hover { background: #c92335; color: white; }
+
+        .errorlist {
+            color: #c92335;
+            font-size: .85rem;
+            padding-left: 18px;
+            margin-top: 6px;
+        }
+
+        .helptext {
+            display: block;
+            margin-top: 6px;
+            color: #6b7280;
+            font-size: .8rem;
+        }
+
+        .helptext ul { padding-left: 18px; }
+
+        @media (max-width: 576px) {
+            .auth-card { padding: 25px 20px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="auth-card">
+        <div class="text-center mb-4">
+            <a class="brand" href="{% url 'home:home' %}">
+                <span class="brand-icon"><i class="bi bi-droplet-fill"></i></span>Blood<span>Link</span>
+            </a>
+            <h2 class="fw-bold mt-4">Create your account</h2>
+            <p class="subtitle">Join the community. Be there when someone needs you.</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"
+                            aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div class="row g-3">
+                {% for field in form %}
+                    <div class="{% if field.name == 'first_name' or field.name == 'last_name' %}col-md-6{% else %}col-12{% endif %}">
+                        <label for="{{ field.id_for_label }}" class="form-label">
+                            {{ field.label }}
+                        </label>
+
+                        {{ field }}
+
+                        {% if field.help_text %}
+                            <div class="helptext">{{ field.help_text|safe }}</div>
+                        {% endif %}
+
+                        {% for error in field.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <button type="submit" class="btn btn-red mt-4">
+                Create Account <i class="bi bi-arrow-right ms-2"></i>
+            </button>
+        </form>
+
+        <p class="text-center subtitle mt-4 mb-0">
+            Already have an account?
+            <a href="{% url 'accounts:login' %}" class="text-danger fw-bold text-decoration-none">
+                Log in
+            </a>
+        </p>
+
+        <div class="text-center mt-3">
+            <a href="{% url 'home:home' %}" class="text-secondary text-decoration-none small">
+                <i class="bi bi-arrow-left me-1"></i>Back to home
+            </a>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
