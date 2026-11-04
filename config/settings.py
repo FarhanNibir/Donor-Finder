@@ -106,8 +106,10 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
-
+TIME_ZONE = "Asia/Dhaka"          # so "today" matches your local date
+LOGIN_URL = "accounts:login"
+LOGIN_REDIRECT_URL = "home:home"
+LOGOUT_REDIRECT_URL = "home:home"
 USE_I18N = True
 
 USE_TZ = True

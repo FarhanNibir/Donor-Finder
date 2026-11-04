@@ -25,6 +25,8 @@
 
         * { box-sizing: border-box; }
 
+        html { scroll-behavior: smooth; }
+
         body {
             margin: 0;
             color: var(--ink);
@@ -178,30 +180,34 @@
             font-weight: 700;
         }
 
-        .search-preview {
-            padding: 15px;
-            border: 1px solid #eee7e7;
-            border-radius: 14px;
-            margin-bottom: 20px;
+        /* search form */
+        .hero-visual .form-label {
+            font-weight: 600;
+            font-size: .85rem;
         }
 
-        .search-preview small {
-            display: block;
-            color: var(--muted);
-            margin-bottom: 5px;
+        .form-control,
+        .form-select {
+            padding: 12px 14px;
+            border-radius: 10px;
+            border-color: #e8e5e5;
         }
 
-        .search-preview strong { font-size: .95rem; }
-
-        .donor-row {
-            display: flex;
-            align-items: center;
-            gap: 13px;
-            padding: 15px 0;
-            border-bottom: 1px solid #f2eeee;
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--red);
+            box-shadow: 0 0 0 .2rem rgba(230, 57, 70, .12);
         }
 
-        .donor-row:last-child { border-bottom: 0; }
+        .form-check-input:checked {
+            background-color: var(--red);
+            border-color: var(--red);
+        }
+
+        .form-check-input:focus {
+            border-color: var(--red);
+            box-shadow: 0 0 0 .2rem rgba(230, 57, 70, .12);
+        }
 
         .blood-avatar {
             width: 47px;
@@ -244,6 +250,26 @@
             font-size: .82rem;
             font-weight: 600;
             text-align: center;
+        }
+
+        /* search results */
+        .results-section {
+            background: #fffafa;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .donor-card {
+            height: 100%;
+            padding: 20px;
+            background: white;
+            border: 1px solid #f0e4e4;
+            border-radius: 16px;
+            transition: .2s;
+        }
+
+        .donor-card:hover {
+            border-color: #f4a4aa;
+            box-shadow: 0 12px 28px rgba(100, 30, 30, .06);
         }
 
         .impact-strip {
@@ -429,6 +455,7 @@
             <div class="collapse navbar-collapse" id="mainNav">
                 <ul class="navbar-nav mx-auto align-items-lg-center">
                     <li class="nav-item"><a class="nav-link" href="#home">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#search">Find Blood</a></li>
                     <li class="nav-item"><a class="nav-link" href="#blood-groups">Blood Groups</a></li>
                     <li class="nav-item"><a class="nav-link" href="#how-it-works">How It Works</a></li>
                     <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
@@ -439,6 +466,7 @@
                         <span class="me-2">
                             Hi, {{ user.first_name|default:user.username }}
                         </span>
+                        <a href="{% url 'accounts:profile' %}" class="btn btn-outline-dark">My Profile</a>
                         <form method="post" action="{% url 'accounts:logout' %}">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-outline-dark">Log Out</button>
@@ -451,6 +479,18 @@
             </div>
         </div>
     </nav>
+
+    {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"
+                            aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
 
     <main>
         <section class="hero" id="home">
@@ -471,7 +511,7 @@
                         </p>
 
                         <div class="d-flex flex-wrap gap-3">
-                            <a href="#blood-groups" class="btn btn-red">
+                            <a href="#search" class="btn btn-red">
                                 <i class="bi bi-search me-2"></i>Find Blood
                             </a>
                             <a href="{% url 'accounts:register' %}" class="btn btn-outline-dark">
@@ -486,52 +526,54 @@
                     </div>
 
                     <div class="col-lg-6">
-                        <div class="hero-visual">
+                        <div class="hero-visual" id="search">
                             <div class="visual-top">
                                 <h3>Find a blood donor</h3>
                                 <span class="live-tag">
                                     <i class="bi bi-circle-fill me-1" style="font-size:7px"></i>
-                                    Donor finder
+                                    Available now
                                 </span>
                             </div>
 
-                            <div class="search-preview">
-                                <small><i class="bi bi-geo-alt me-1"></i>Your location</small>
-                                <strong>Choose your area</strong>
-                                <i class="bi bi-chevron-down float-end text-secondary"></i>
-                            </div>
-
-                            <div class="search-preview">
-                                <small>Required blood group</small>
-                                <div class="d-flex gap-2 flex-wrap mt-2">
-                                    <span class="badge rounded-pill text-bg-danger px-3 py-2">A+</span>
-                                    <span class="badge rounded-pill text-bg-light text-dark px-3 py-2">B+</span>
-                                    <span class="badge rounded-pill text-bg-light text-dark px-3 py-2">O+</span>
-                                    <span class="badge rounded-pill text-bg-light text-dark px-3 py-2">AB+</span>
+                            <form method="get" action="{% url 'home:home' %}#results">
+                                <div class="mb-3">
+                                    <label class="form-label" for="id_blood_group">Required blood group</label>
+                                    <select name="blood_group" id="id_blood_group" class="form-select" required>
+                                        <option value="">Select blood group</option>
+                                        {% for value, label in blood_cards %}
+                                            <option value="{{ value }}" {% if value == blood_group %}selected{% endif %}>{{ value }}</option>
+                                        {% endfor %}
+                                    </select>
                                 </div>
-                            </div>
 
-                            <div class="donor-row">
-                                <div class="blood-avatar">A+</div>
-                                <div class="donor-info">
-                                    <strong>Available donor</strong>
-                                    <small>Location-based matching</small>
+                                <div class="mb-3">
+                                    <label class="form-label" for="id_district">District</label>
+                                    <input type="text" name="district" id="id_district" class="form-control"
+                                           list="district-list" value="{{ district }}"
+                                           placeholder="e.g. Dhaka" autocomplete="off">
+                                    <datalist id="district-list">
+                                        {% for d in districts %}<option value="{{ d }}">{% endfor %}
+                                    </datalist>
                                 </div>
-                                <span class="available">
-                                    <i class="bi bi-check-circle-fill me-1"></i>Available
-                                </span>
-                            </div>
 
-                            <div class="donor-row">
-                                <div class="blood-avatar">O+</div>
-                                <div class="donor-info">
-                                    <strong>Available donor</strong>
-                                    <small>Nearby area</small>
+                                <div class="mb-3">
+                                    <label class="form-label" for="id_area">Area (optional)</label>
+                                    <input type="text" name="area" id="id_area" class="form-control"
+                                           value="{{ area }}" placeholder="e.g. Mirpur">
                                 </div>
-                                <span class="available">
-                                    <i class="bi bi-check-circle-fill me-1"></i>Available
-                                </span>
-                            </div>
+
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" name="exact"
+                                           value="1" id="id_exact" {% if exact %}checked{% endif %}>
+                                    <label class="form-check-label small" for="id_exact">
+                                        Exact blood group only
+                                    </label>
+                                </div>
+
+                                <button type="submit" class="btn btn-red w-100">
+                                    <i class="bi bi-search me-2"></i>Search donors
+                                </button>
+                            </form>
 
                             <div class="visual-bottom">
                                 <i class="bi bi-heart-fill me-2"></i>
@@ -542,6 +584,73 @@
                 </div>
             </div>
         </section>
+
+        {% if searched %}
+        <section class="section results-section" id="results">
+            <div class="container">
+                <div class="section-heading">
+                    <h2>{{ total }} donor{{ total|pluralize }} available</h2>
+                    <p>
+                        {% if blood_group %}Blood group {{ blood_group }}{% if not exact %} (including compatible groups){% endif %}{% endif %}
+                        {% if district %} · {{ district }}{% endif %}{% if area %} · {{ area }}{% endif %}
+                    </p>
+                </div>
+
+                {% if donors %}
+                    <div class="row g-3">
+                        {% for d in donors %}
+                            <div class="col-md-6 col-lg-4">
+                                <div class="donor-card">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="blood-avatar">{{ d.blood_group }}</div>
+                                        <div class="donor-info">
+                                            <strong>{{ d.user.get_full_name|default:d.user.username }}</strong>
+                                            <small>
+                                                <i class="bi bi-geo-alt me-1"></i>{% if d.area %}{{ d.area }}, {% endif %}{{ d.district }}
+                                            </small>
+                                        </div>
+                                        {% if blood_group %}
+                                            {% if d.blood_group == blood_group %}
+                                                <span class="available">Exact match</span>
+                                            {% else %}
+                                                <span class="text-muted small">Compatible</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="mt-3">
+                                        {% if user.is_authenticated %}
+                                            <a href="tel:{{ d.phone }}" class="btn btn-red w-100">
+                                                <i class="bi bi-telephone me-2"></i>{{ d.phone }}
+                                            </a>
+                                        {% else %}
+                                            <a href="{% url 'accounts:login' %}?next={{ request.get_full_path|urlencode }}"
+                                               class="btn btn-outline-dark w-100">
+                                                Log in to see phone number
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    {% if total > max_results %}
+                        <p class="text-center text-muted mt-4">
+                            Showing the first {{ max_results }}. Add a district or area to narrow it down.
+                        </p>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center text-muted">
+                        <i class="bi bi-emoji-frown fs-1"></i>
+                        <p class="mt-2">
+                            No available donors found. Try another area or uncheck "Exact blood group only".
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
 
         <section class="impact-strip" id="about">
             <div class="container">
@@ -589,85 +698,18 @@
                 </div>
 
                 <div class="row g-3">
-                    <div class="col-6 col-md-3">
-                        <a href="#get-started" class="text-decoration-none text-reset">
-                            <div class="blood-card">
-                                <div class="blood-type">A+</div>
-                                <strong>A Positive</strong><br>
-                                <small>Find donors</small>
-                            </div>
-                        </a>
-                    </div>
-
-                    <div class="col-6 col-md-3">
-                        <a href="#get-started" class="text-decoration-none text-reset">
-                            <div class="blood-card">
-                                <div class="blood-type">A−</div>
-                                <strong>A Negative</strong><br>
-                                <small>Find donors</small>
-                            </div>
-                        </a>
-                    </div>
-
-                    <div class="col-6 col-md-3">
-                        <a href="#get-started" class="text-decoration-none text-reset">
-                            <div class="blood-card">
-                                <div class="blood-type">B+</div>
-                                <strong>B Positive</strong><br>
-                                <small>Find donors</small>
-                            </div>
-                        </a>
-                    </div>
-
-                    <div class="col-6 col-md-3">
-                        <a href="#get-started" class="text-decoration-none text-reset">
-                            <div class="blood-card">
-                                <div class="blood-type">B−</div>
-                                <strong>B Negative</strong><br>
-                                <small>Find donors</small>
-                            </div>
-                        </a>
-                    </div>
-
-                    <div class="col-6 col-md-3">
-                        <a href="#get-started" class="text-decoration-none text-reset">
-                            <div class="blood-card">
-                                <div class="blood-type">AB+</div>
-                                <strong>AB Positive</strong><br>
-                                <small>Find donors</small>
-                            </div>
-                        </a>
-                    </div>
-
-                    <div class="col-6 col-md-3">
-                        <a href="#get-started" class="text-decoration-none text-reset">
-                            <div class="blood-card">
-                                <div class="blood-type">AB−</div>
-                                <strong>AB Negative</strong><br>
-                                <small>Find donors</small>
-                            </div>
-                        </a>
-                    </div>
-
-                    <div class="col-6 col-md-3">
-                        <a href="#get-started" class="text-decoration-none text-reset">
-                            <div class="blood-card">
-                                <div class="blood-type">O+</div>
-                                <strong>O Positive</strong><br>
-                                <small>Find donors</small>
-                            </div>
-                        </a>
-                    </div>
-
-                    <div class="col-6 col-md-3">
-                        <a href="#get-started" class="text-decoration-none text-reset">
-                            <div class="blood-card">
-                                <div class="blood-type">O−</div>
-                                <strong>O Negative</strong><br>
-                                <small>Find donors</small>
-                            </div>
-                        </a>
-                    </div>
+                    {% for value, label in blood_cards %}
+                        <div class="col-6 col-md-3">
+                            <a href="{% url 'home:home' %}?blood_group={{ value|urlencode }}#results"
+                               class="text-decoration-none text-reset">
+                                <div class="blood-card">
+                                    <div class="blood-type">{{ value }}</div>
+                                    <strong>{{ label }}</strong><br>
+                                    <small>Find donors</small>
+                                </div>
+                            </a>
+                        </div>
+                    {% endfor %}
                 </div>
             </div>
         </section>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My Profile | BloodLink</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        body { background: #fff7f7; color: #18212f; padding: 35px 0; }
+        .card-box { max-width: 620px; margin: auto; padding: 32px; background: white;
+                    border: 1px solid #f1e5e5; border-radius: 22px; }
+        .btn-red { background: #e63946; border: 0; color: white; font-weight: 700;
+                   padding: 12px; border-radius: 10px; }
+        .btn-red:hover { background: #c92335; color: white; }
+        .status { padding: 18px; border-radius: 14px; }
+        .status.ok { background: #e5f8ef; color: #168458; }
+        .status.wait { background: #fff0e0; color: #9a5a00; }
+        .status.off { background: #f1f1f1; color: #555; }
+        .form-control, .form-select { padding: 12px 14px; border-radius: 10px; border-color: #e8e5e5; }
+        .form-control:focus, .form-select:focus {
+            border-color: #e63946; box-shadow: 0 0 0 .2rem rgba(230, 57, 70, .12);
+        }
+        .swal2-popup { border-radius: 20px; }
+    </style>
+</head>
+<body>
+<div class="container">
+  <div class="card-box">
+    <a href="{% url 'home:home' %}" class="text-decoration-none text-secondary small">
+      <i class="bi bi-arrow-left me-1"></i>Back to home
+    </a>
+    <h2 class="fw-bold mt-3">{{ user.get_full_name|default:user.username }}</h2>
+
+    {% if not donor.is_active %}
+      <div class="status off mb-4"><i class="bi bi-eye-slash me-2"></i>You are hidden from donor search.</div>
+    {% elif donor.is_available %}
+      <div class="status ok mb-4"><i class="bi bi-check-circle-fill me-2"></i>You are available to donate.</div>
+    {% else %}
+      <div class="status wait mb-4">
+        <i class="bi bi-hourglass-split me-2"></i>
+        You are resting until <strong>{{ donor.available_again_on|date:"d M Y" }}</strong>.
+      </div>
+    {% endif %}
+
+    {% if donor.is_available %}
+      <form method="post" action="{% url 'accounts:mark_donated' %}" class="mb-4" id="donatedForm">
+        {% csrf_token %}
+        <button class="btn btn-red w-100"><i class="bi bi-droplet-fill me-2"></i>I donated blood today</button>
+      </form>
+    {% endif %}
+
+    <h5 class="fw-bold">Donor details</h5>
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="mb-3 {% if field.name == 'is_active' %}form-check{% endif %}">
+          {% if field.name == 'is_active' %}
+            {{ field }}
+            <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {% else %}
+            <label class="form-label fw-semibold small" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+          {% endif %}
+          {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+      {% endfor %}
+      <button class="btn btn-red w-100">Save changes</button>
+    </form>
+  </div>
+</div>
+
+{# Django messages, read by the SweetAlert script below #}
+{% if messages %}
+  <div id="django-messages" hidden>
+    {% for message in messages %}
+      <span data-tag="{{ message.tags }}" data-text="{{ message }}"></span>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  const RED = '#e63946';
+
+  // 1) Show Django messages as SweetAlert popups
+  const box = document.getElementById('django-messages');
+  if (box) {
+    const icons = { success: 'success', error: 'error', warning: 'warning', info: 'info', debug: 'info' };
+    const items = [...box.querySelectorAll('span')];
+    (async () => {
+      for (const el of items) {
+        const tag = (el.dataset.tag || 'info').split(' ')[0];
+        await Swal.fire({
+          icon: icons[tag] || 'info',
+          title: tag === 'success' ? 'Done!' : tag === 'error' ? 'Oops!' : 'Notice',
+          text: el.dataset.text,
+          confirmButtonColor: RED,
+          timer: tag === 'success' ? 3500 : undefined,
+          timerProgressBar: tag === 'success',
+        });
+      }
+    })();
+  }
+
+  // 2) Confirm "I donated" with SweetAlert
+  const donatedForm = document.getElementById('donatedForm');
+  if (donatedForm) {
+    donatedForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'question',
+        title: 'Did you donate blood today?',
+        text: 'You will be hidden from donor search for the next 4 months.',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, I donated',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: RED,
+        reverseButtons: true,
+      }).then((result) => {
+        if (result.isConfirmed) donatedForm.submit();
+      });
+    });
+  }
+</script>
+</body>
+</html>
